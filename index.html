@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gravesite — A Permanent Digital Cemetery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--charcoal:#2a2a2a;--stone:#8a8a7a;--moss:#4a5a3a;--ivory:#d4cfc0;
+--blue-black:#1a1e2e;--oxidized:#4a6a5a;--amber:#c4a04a;
+--serif:'Cormorant Garamond',Georgia,serif;--sans:'Inter',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:#0d0e12;color:var(--ivory);font-family:var(--sans);overflow-x:hidden;font-weight:300}
+::selection{background:rgba(138,138,122,.3);color:var(--ivory)}
+
+/* ══════ HERO ══════ */
+#hero{position:relative;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;z-index:1}
+.sky{position:absolute;inset:0;background:linear-gradient(180deg,#0a0c14 0%,#131726 30%,#1a1e2e 50%,#2a2535 70%,#3a3040 85%,#4a3a45 100%);z-index:0}
+
+/* Gate silhouette */
+.gate{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none}
+.gate svg{width:min(700px,90vw);height:auto;opacity:.7}
+
+/* Trees */
+.tree{position:absolute;bottom:0;z-index:2;pointer-events:none;opacity:.6}
+.tree-left{left:-2%;width:min(350px,30vw)}
+.tree-right{right:-2%;width:min(300px,25vw);transform:scaleX(-1)}
+.tree svg{width:100%;height:auto}
+
+/* Ground */
+.ground{position:absolute;bottom:0;left:0;right:0;height:30vh;z-index:2;
+background:linear-gradient(180deg,transparent 0%,#1a1c14 20%,#1e2016 40%,#22241a 60%,#252720 80%,#1d1f18 100%)}
+.ground::before{content:'';position:absolute;inset:0;
+background:repeating-linear-gradient(85deg,transparent,transparent 3px,rgba(74,90,58,.15) 3px,rgba(74,90,58,.15) 4px),
+repeating-linear-gradient(95deg,transparent,transparent 5px,rgba(74,106,90,.1) 5px,rgba(74,106,90,.1) 6px)}
+
+/* Stone path */
+.path{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:120px;height:30vh;z-index:3;pointer-events:none;
+background:repeating-linear-gradient(180deg,transparent,transparent 18px,rgba(138,138,122,.08) 18px,rgba(138,138,122,.08) 20px);
+mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.3) 30%,rgba(0,0,0,.6) 100%);-webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.3) 30%,rgba(0,0,0,.6) 100%);
+clip-path:polygon(40% 0%,60% 0%,75% 100%,25% 100%)}
+
+/* Fog layers */
+.fog{position:absolute;bottom:5%;left:0;width:200%;height:25vh;z-index:4;pointer-events:none;opacity:.4}
+.fog-1{animation:fogDrift 45s linear infinite}
+.fog-2{animation:fogDrift 60s linear infinite reverse;opacity:.25;bottom:10%}
+.fog-3{animation:fogDrift 35s linear infinite;opacity:.15;bottom:0%}
+.fog div{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.08),transparent 70%)}
+@keyframes fogDrift{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* Hero text */
+.hero-content{position:relative;z-index:10;text-align:center;padding:0 2rem}
+.hero-title{font-family:var(--serif);font-size:clamp(3rem,8vw,7rem);font-weight:300;letter-spacing:.15em;color:var(--ivory);
+text-shadow:0 0 60px rgba(26,30,46,.8);line-height:1;margin-bottom:1rem;opacity:0;animation:fadeIn 3s ease forwards}
+.hero-subtitle{font-family:var(--serif);font-size:clamp(.85rem,1.5vw,1.1rem);font-weight:300;font-style:italic;
+color:rgba(212,207,192,.5);letter-spacing:.08em;margin-bottom:3rem;opacity:0;animation:fadeIn 3s 1s ease forwards}
+.btn-create{font-family:var(--serif);font-size:1rem;letter-spacing:.12em;text-transform:uppercase;
+padding:.8rem 2.5rem;background:transparent;color:var(--stone);
+border:1px solid rgba(138,138,122,.3);cursor:pointer;transition:all .8s ease;
+opacity:0;animation:fadeIn 2s 2s ease forwards;position:relative}
+.btn-create:hover{border-color:rgba(196,160,74,.3);color:var(--ivory);
+box-shadow:0 0 30px rgba(196,160,74,.06),inset 0 0 30px rgba(196,160,74,.03)}
+
+.scroll-hint{position:absolute;bottom:3rem;z-index:10;opacity:0;animation:fadeIn 2s 3.5s ease forwards}
+.scroll-hint span{display:block;width:1px;height:40px;background:linear-gradient(180deg,rgba(138,138,122,.4),transparent);margin:0 auto}
+
+@keyframes fadeIn{to{opacity:1}}
+
+/* ══════ FIREFLIES ══════ */
+.firefly{position:fixed;width:3px;height:3px;border-radius:50%;pointer-events:none;z-index:100;
+background:var(--amber);box-shadow:0 0 6px 2px rgba(196,160,74,.3),0 0 12px 4px rgba(196,160,74,.1);
+opacity:0;transition:opacity 2s}
+
+/* ══════ CEMETERY FIELD ══════ */
+#cemetery{position:relative;min-height:200vh;background:linear-gradient(180deg,#1d1f18 0%,#1a1c16 20%,#181a14 50%,#151712 80%,#121410 100%);
+padding:8rem 0 6rem;overflow:hidden}
+#cemetery::before{content:'';position:absolute;top:0;left:0;right:0;height:200px;
+background:linear-gradient(180deg,#0d0e12,transparent);z-index:2;pointer-events:none}
+.cemetery-title{text-align:center;font-family:var(--serif);font-size:clamp(1.2rem,2vw,1.6rem);
+font-weight:300;letter-spacing:.2em;color:rgba(138,138,122,.4);margin-bottom:6rem;position:relative;z-index:3}
+
+.cemetery-field{position:relative;max-width:1400px;margin:0 auto;min-height:160vh;padding:0 2rem}
+.tombstone{position:absolute;cursor:pointer;transition:transform .6s ease,filter .6s ease;z-index:5}
+.tombstone:hover{transform:translateY(-4px);filter:drop-shadow(0 0 15px rgba(196,160,74,.08))}
+.tombstone svg{display:block;width:100%;height:auto}
+.tomb-name{font-family:var(--serif);font-weight:500;letter-spacing:.05em}
+.tomb-dates{font-family:var(--serif);font-weight:300;font-size:.7em;letter-spacing:.03em}
+.tomb-epitaph{font-family:var(--serif);font-style:italic;font-weight:300;font-size:.6em}
+.tomb-symbol{font-size:.8em;opacity:.6}
+
+/* Cemetery fog */
+.cem-fog{position:absolute;bottom:0;left:0;width:200%;height:15vh;z-index:4;pointer-events:none;opacity:.3}
+.cem-fog.f1{animation:fogDrift 50s linear infinite}
+.cem-fog.f2{animation:fogDrift 40s linear infinite reverse;opacity:.2;bottom:5%}
+
+/* ══════ OVERLAY (tombstone detail) ══════ */
+.overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+background:rgba(10,12,18,.85);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .8s ease}
+.overlay.active{opacity:1;pointer-events:all}
+.overlay-card{max-width:480px;width:90%;padding:3rem;text-align:center;
+background:linear-gradient(135deg,rgba(42,42,42,.9),rgba(30,32,22,.9));
+border:1px solid rgba(138,138,122,.15);position:relative}
+.overlay-close{position:absolute;top:1rem;right:1.5rem;background:none;border:none;
+color:rgba(138,138,122,.4);font-size:1.5rem;cursor:pointer;font-family:var(--serif);transition:color .3s}
+.overlay-close:hover{color:var(--ivory)}
+.overlay-name{font-family:var(--serif);font-size:2rem;font-weight:400;color:var(--ivory);letter-spacing:.08em;margin-bottom:.5rem}
+.overlay-dates{font-family:var(--serif);font-size:.95rem;color:var(--stone);letter-spacing:.05em;margin-bottom:1.5rem}
+.overlay-symbol{font-size:1.8rem;margin-bottom:1rem;opacity:.5}
+.overlay-epitaph{font-family:var(--serif);font-style:italic;font-size:1.1rem;color:rgba(212,207,192,.7);
+margin-bottom:1.5rem;line-height:1.6}
+.overlay-buried{font-family:var(--sans);font-size:.8rem;color:rgba(138,138,122,.4);letter-spacing:.05em;
+border-top:1px solid rgba(138,138,122,.1);padding-top:1rem;margin-top:1rem}
+.overlay-buried span{display:block;font-family:var(--serif);font-style:italic;font-size:.95rem;
+color:rgba(212,207,192,.5);margin-top:.3rem}
+
+/* ══════ CREATE MODAL ══════ */
+.modal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
+background:rgba(10,12,18,.9);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .8s ease;overflow-y:auto;padding:2rem}
+.modal.active{opacity:1;pointer-events:all}
+.modal-inner{display:flex;gap:3rem;max-width:1000px;width:100%;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.modal-form{flex:1;min-width:320px;max-width:500px;padding:2.5rem;
+background:linear-gradient(145deg,rgba(35,33,28,.95),rgba(28,26,22,.95));
+border:1px solid rgba(138,138,122,.12);position:relative}
+.modal-form h2{font-family:var(--serif);font-size:1.6rem;font-weight:300;letter-spacing:.15em;
+color:var(--ivory);margin-bottom:.5rem}
+.modal-form p.sub{font-family:var(--serif);font-style:italic;font-size:.85rem;
+color:rgba(138,138,122,.4);margin-bottom:2rem}
+.modal-close{position:absolute;top:1rem;right:1.5rem;background:none;border:none;
+color:rgba(138,138,122,.4);font-size:1.5rem;cursor:pointer;font-family:var(--serif);transition:color .3s}
+.modal-close:hover{color:var(--ivory)}
+
+.field{margin-bottom:1.5rem}
+.field label{display:block;font-family:var(--sans);font-size:.7rem;letter-spacing:.12em;
+text-transform:uppercase;color:rgba(138,138,122,.5);margin-bottom:.4rem}
+.field input[type="text"],.field input[type="date"],.field textarea{width:100%;background:transparent;
+border:none;border-bottom:1px solid rgba(138,138,122,.2);padding:.5rem 0;font-family:var(--serif);
+font-size:1rem;color:var(--ivory);outline:none;transition:border-color .3s}
+.field input:focus,.field textarea:focus{border-color:rgba(196,160,74,.3)}
+.field input::placeholder,.field textarea::placeholder{color:rgba(138,138,122,.3);font-style:italic}
+.field textarea{resize:none;height:auto}
+.field input[type="date"]{color-scheme:dark}
+.field-grayed input{color:rgba(138,138,122,.5)}
+
+/* Epitaph cards */
+.epitaph-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.epitaph-option{padding:.5rem .6rem;font-family:var(--serif);font-style:italic;font-size:.8rem;
+color:rgba(212,207,192,.5);border:1px solid rgba(138,138,122,.1);cursor:pointer;
+transition:all .4s;text-align:center;line-height:1.3}
+.epitaph-option:hover,.epitaph-option.selected{border-color:rgba(196,160,74,.3);color:var(--ivory)}
+
+/* Symbol grid */
+.symbol-grid{display:flex;flex-wrap:wrap;gap:.5rem}
+.symbol-option{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+font-size:1.1rem;border:1px solid rgba(138,138,122,.1);cursor:pointer;transition:all .4s;opacity:.5}
+.symbol-option:hover,.symbol-option.selected{border-color:rgba(196,160,74,.3);opacity:1}
+
+/* Shape selector */
+.shape-grid{display:flex;gap:.6rem;flex-wrap:wrap}
+.shape-option{width:50px;height:65px;border:1px solid rgba(138,138,122,.1);cursor:pointer;
+transition:all .4s;display:flex;align-items:center;justify-content:center;padding:4px}
+.shape-option:hover,.shape-option.selected{border-color:rgba(196,160,74,.3)}
+.shape-option svg{width:100%;height:100%;opacity:.5}
+.shape-option:hover svg,.shape-option.selected svg{opacity:.9}
+
+/* Color swatches */
+.color-grid{display:flex;gap:.5rem;flex-wrap:wrap}
+.color-swatch{width:32px;height:32px;border:1px solid rgba(138,138,122,.15);cursor:pointer;
+transition:all .4s;position:relative}
+.color-swatch:hover,.color-swatch.selected{border-color:rgba(196,160,74,.4);
+box-shadow:0 0 10px rgba(196,160,74,.1)}
+
+.btn-place{font-family:var(--serif);font-size:.95rem;letter-spacing:.12em;text-transform:uppercase;
+padding:.8rem 2rem;background:transparent;color:var(--stone);width:100%;margin-top:1.5rem;
+border:1px solid rgba(138,138,122,.25);cursor:pointer;transition:all .6s}
+.btn-place:hover{border-color:rgba(196,160,74,.3);color:var(--ivory);
+box-shadow:0 0 20px rgba(196,160,74,.05)}
+
+/* Preview panel */
+.preview-panel{flex:0 0 300px;min-height:400px;display:flex;align-items:center;justify-content:center;
+padding:2rem;background:linear-gradient(180deg,rgba(26,30,46,.3),rgba(30,32,22,.5));
+border:1px solid rgba(138,138,122,.08)}
+.preview-panel svg{max-width:200px;width:100%}
+
+/* ══════ ARCHIVE ══════ */
+#archive{position:relative;background:linear-gradient(180deg,#121410,#0f100e 30%,#0d0e0c);
+padding:8rem 2rem;min-height:100vh}
+#archive::before{content:'';position:absolute;top:0;left:0;right:0;height:150px;
+background:linear-gradient(180deg,#121410,transparent);z-index:1;pointer-events:none}
+.archive-header{text-align:center;position:relative;z-index:2;margin-bottom:1rem}
+.archive-title{font-family:var(--serif);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:300;
+letter-spacing:.2em;color:var(--ivory);margin-bottom:.5rem}
+.archive-sub{font-family:var(--serif);font-style:italic;font-size:.9rem;color:rgba(138,138,122,.35)}
+.archive-search{display:flex;justify-content:center;margin:2.5rem auto 3rem;max-width:400px}
+.archive-search input{width:100%;background:transparent;border:none;
+border-bottom:1px solid rgba(138,138,122,.15);padding:.6rem 0;font-family:var(--serif);
+font-size:.95rem;color:var(--ivory);outline:none;text-align:center;letter-spacing:.05em}
+.archive-search input::placeholder{color:rgba(138,138,122,.25);font-style:italic}
+.archive-search input:focus{border-color:rgba(138,138,122,.3)}
+
+.archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;
+max-width:1200px;margin:0 auto;position:relative;z-index:2}
+.archive-card{padding:1.2rem;border:1px solid rgba(138,138,122,.06);
+background:rgba(26,28,22,.4);text-align:center;transition:border-color .4s}
+.archive-card:hover{border-color:rgba(138,138,122,.15)}
+.archive-card .ac-symbol{font-size:.9rem;opacity:.3;margin-bottom:.3rem}
+.archive-card .ac-name{font-family:var(--serif);font-size:.85rem;color:rgba(212,207,192,.6);margin-bottom:.2rem}
+.archive-card .ac-dates{font-family:var(--serif);font-size:.65rem;color:rgba(138,138,122,.3);letter-spacing:.03em;margin-bottom:.3rem}
+.archive-card .ac-epitaph{font-family:var(--serif);font-style:italic;font-size:.7rem;color:rgba(138,138,122,.25);line-height:1.4}
+
+/* Footer */
+.footer{text-align:center;padding:4rem 2rem 3rem;background:#0a0b09;
+border-top:1px solid rgba(138,138,122,.05)}
+.footer p{font-family:var(--serif);font-size:.75rem;color:rgba(138,138,122,.2);letter-spacing:.1em}
+
+/* ══════ RESPONSIVE ══════ */
+@media(max-width:768px){
+.modal-inner{flex-direction:column;align-items:center}
+.preview-panel{flex:none;width:100%;min-height:300px}
+.epitaph-grid{grid-template-columns:1fr}
+.archive-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.cemetery-field{padding:0 1rem}
+}
+
+/* Spectral flicker */
+@keyframes spectral{0%,96%,100%{opacity:0}97%{opacity:.03}98%{opacity:0}99%{opacity:.02}}
+.spectral{position:fixed;inset:0;background:rgba(180,190,210,.03);pointer-events:none;z-index:99;
+opacity:0;animation:spectral 12s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<!-- Spectral flicker -->
+<div class="spectral"></div>
+
+<!-- Hero -->
+<section id="hero">
+<div class="sky"></div>
+
+<!-- Gate -->
+<div class="gate">
+<svg viewBox="0 0 700 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g fill="#0a0c10" opacity=".9">
+<!-- Left pillar --><rect x="80" y="40" width="20" height="180"/>
+<rect x="72" y="30" width="36" height="15" rx="2"/>
+<circle cx="90" cy="25" r="8"/>
+<!-- Right pillar --><rect x="600" y="40" width="20" height="180"/>
+<rect x="592" y="30" width="36" height="15" rx="2"/>
+<circle cx="610" cy="25" r="8"/>
+<!-- Arch --><path d="M100 50 Q350 -30 600 50" stroke="#0a0c10" stroke-width="8" fill="none"/>
+<path d="M100 55 Q350 -25 600 55" stroke="#0a0c10" stroke-width="3" fill="none"/>
+<!-- Bars -->
+<rect x="180" y="48" width="3" height="172" opacity=".7"/>
+<rect x="250" y="35" width="3" height="185" opacity=".7"/>
+<rect x="320" y="25" width="3" height="195" opacity=".7"/>
+<rect x="350" y="22" width="3" height="198" opacity=".7"/>
+<rect x="380" y="25" width="3" height="195" opacity=".7"/>
+<rect x="450" y="35" width="3" height="185" opacity=".7"/>
+<rect x="520" y="48" width="3" height="172" opacity=".7"/>
+<!-- Finials -->
+<ellipse cx="181" cy="44" rx="4" ry="6" opacity=".7"/>
+<ellipse cx="251" cy="31" rx="4" ry="6" opacity=".7"/>
+<ellipse cx="321" cy="21" rx="4" ry="6" opacity=".7"/>
+<ellipse cx="351" cy="18" rx="5" ry="7" opacity=".7"/>
+<ellipse cx="381" cy="21" rx="4" ry="6" opacity=".7"/>
+<ellipse cx="451" cy="31" rx="4" ry="6" opacity=".7"/>
+<ellipse cx="521" cy="44" rx="4" ry="6" opacity=".7"/>
+<!-- Cross on center -->
+<rect x="348" y="4" width="6" height="16"/>
+<rect x="344" y="8" width="14" height="4"/>
+</g>
+</svg>
+</div>
+
+<!-- Trees -->
+<div class="tree tree-left">
+<svg viewBox="0 0 300 500" fill="#0a0c10" opacity=".8" xmlns="http://www.w3.org/2000/svg">
+<path d="M140 500 L140 300 Q130 280 100 260 Q80 250 60 220 Q50 200 70 180 Q60 160 80 140 Q70 110 100 90 Q90 60 130 40 Q140 20 160 30 Q180 10 200 40 Q220 30 230 60 Q250 50 240 90 Q260 80 250 120 Q270 110 255 150 Q270 160 250 180 Q260 200 240 210 Q250 230 220 250 Q230 270 200 280 Q190 290 180 300 L180 500Z"/>
+<path d="M100 260 Q60 240 30 260 Q10 250 20 230 Q5 210 30 200 Q20 180 50 170" fill="none" stroke="#0a0c10" stroke-width="6"/>
+<path d="M220 250 Q260 230 280 250 Q295 235 285 215 Q300 200 280 190" fill="none" stroke="#0a0c10" stroke-width="5"/>
+</svg>
+</div>
+<div class="tree tree-right">
+<svg viewBox="0 0 260 450" fill="#0a0c10" opacity=".7" xmlns="http://www.w3.org/2000/svg">
+<path d="M120 450 L120 280 Q100 260 80 230 Q60 210 70 180 Q55 155 80 130 Q70 100 100 80 Q95 50 130 40 Q140 15 160 35 Q185 20 190 55 Q210 45 200 80 Q220 90 200 120 Q215 140 195 160 Q200 190 180 200 Q195 230 170 250 L155 280 L155 450Z"/>
+</svg>
+</div>
+
+<!-- Ground -->
+<div class="ground"></div>
+<div class="path"></div>
+
+<!-- Fog -->
+<div class="fog fog-1" id="fog1"></div>
+<div class="fog fog-2" id="fog2"></div>
+<div class="fog fog-3" id="fog3"></div>
+
+<!-- Hero content -->
+<div class="hero-content">
+<h1 class="hero-title">Gravesite</h1>
+<p class="hero-subtitle">A permanent digital cemetery for what no longer exists.</p>
+<button class="btn-create" onclick="openModal()">Create a Marker</button>
+</div>
+
+<div class="scroll-hint"><span></span></div>
+</section>
+
+<!-- Cemetery Field -->
+<section id="cemetery">
+<p class="cemetery-title">⸻ &ensp; The Grounds &ensp; ⸻</p>
+<div class="cemetery-field" id="cemeteryField"></div>
+<div class="cem-fog f1" id="cemFog1"></div>
+<div class="cem-fog f2" id="cemFog2"></div>
+</section>
+
+<!-- Archive -->
+<section id="archive">
+<div class="archive-header">
+<h2 class="archive-title">All Who Rest Here</h2>
+<p class="archive-sub">A living record of what has passed</p>
+</div>
+<div class="archive-search"><input type="text" placeholder="Search the archive…"></div>
+<div class="archive-grid" id="archiveGrid"></div>
+</section>
+
+<footer class="footer">
+<p>Gravesite — est. MMXXVI — All markers are permanent.</p>
+</footer>
+
+<!-- Tombstone Detail Overlay -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeOverlay()">
+<div class="overlay-card">
+<button class="overlay-close" onclick="closeOverlay()">×</button>
+<div class="overlay-symbol" id="ovSymbol"></div>
+<div class="overlay-name" id="ovName"></div>
+<div class="overlay-dates" id="ovDates"></div>
+<div class="overlay-epitaph" id="ovEpitaph"></div>
+<div class="overlay-buried"><span style="font-family:var(--sans);font-style:normal">What was buried</span><span id="ovBuried"></span></div>
+</div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+<div class="modal-inner">
+<div class="modal-form">
+<button class="modal-close" onclick="closeModal()">×</button>
+<h2>Create a Marker</h2>
+<p class="sub">To mark what has passed.</p>
+
+<div class="field">
+<label>Name</label>
+<input type="text" id="fName" placeholder="Who or what rests here" oninput="updatePreview()">
+</div>
+<div class="field">
+<label>Birth Date</label>
+<input type="date" id="fBirth" oninput="updatePreview()">
+</div>
+<div class="field field-grayed">
+<label>Death Date</label>
+<input type="date" id="fDeath" oninput="updatePreview()">
+</div>
+<div class="field">
+<label>What are you burying?</label>
+<input type="text" id="fBurying" placeholder="a version of myself">
+</div>
+
+<div class="field">
+<label>Epitaph</label>
+<div class="epitaph-grid" id="epitaphGrid"></div>
+</div>
+
+<div class="field">
+<label>Symbol</label>
+<div class="symbol-grid" id="symbolGrid"></div>
+</div>
+
+<div class="field">
+<label>Stone Shape</label>
+<div class="shape-grid" id="shapeGrid"></div>
+</div>
+
+<div class="field">
+<label>Stone Color</label>
+<div class="color-grid" id="colorGrid"></div>
+</div>
+
+<button class="btn-place" onclick="placeStone()">Place This Stone</button>
+</div>
+<div class="preview-panel" id="previewPanel">
+<svg id="previewSvg" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+</div>
+</div>
+
+<script>
+// ══════ DATA ══════
+const epitaphs = [
+"Gone but not erased","Beloved and briefly held","At rest in the archive",
+"Remembered in fragments","Here lies what lingered","Saved, then lost",
+"Too dear to keep","Buried by time","Returned to silence","Permanently unavailable"
+];
+const symbols = [
+{ch:'✦',n:'star'},{ch:'🕊',n:'dove'},{ch:'✿',n:'flower'},{ch:'🌹',n:'rose'},
+{ch:'⚘',n:'lily'},{ch:'🕯',n:'flame'},{ch:'☽',n:'crescent'},{ch:'👁',n:'eye'},
+{ch:'🙏',n:'hands'},{ch:'♱',n:'cross'},{ch:'◇',n:'angel'}
+];
+const shapeNames = ['Rounded','Arched','Gothic','Winged','Angel-top','Pedestal'];
+const colors = [
+{name:'Weathered Gray',hex:'#8a8a7a'},{name:'Bone Ivory',hex:'#d4cfc0'},
+{name:'Charcoal Slate',hex:'#3a3a38'},{name:'Moss Green',hex:'#5a6a4a'},
+{name:'Dusky Rose',hex:'#8a6a6a'},{name:'Moonlit Marble',hex:'#b0aaa0'}
+];
+
+const names = [
+"Eleanor Voss","James Whitfield","Maren Solberg","Theodore Crane","Lucia Ferreira",
+"August Hale","Iris Nakamura","Sebastian Lowe","Clara Henning","Dominic Ashworth",
+"Yara Osei","Felix Marchetti","Nina Strand","Oliver Beaumont","Sylvie Renard",
+"Henrik Dahl","Camille Fournier","Rowan Blackwell","Astrid Lindmark","Julian Cross",
+"Petra Varga","Leo Castellano","Marguerite Blanc","Soren Elstad","Daphne Kiriakos",
+"Rafael Mora","Ingrid Holm","Miles Ashford","Celeste Duval","Tobias Engström"
+];
+const buried = [
+"a friendship that outlived its purpose","the sound of their voice","an apartment on 4th Street",
+"the person I was at 23","a promise never kept","summer 2019","the draft that was never sent",
+"a language I used to speak","my confidence","the feeling of being known",
+"a garden that no one tended","a childhood bedroom","the last good year",
+"an email I should have opened","a dog named Rue","every photograph from that trip",
+"a phone number I still remember","the belief that things would be different",
+"an inside joke with no one left to tell","a wedding that never happened",
+"a version of the city that no longer exists","the notebook with all my ideas",
+"a playlist made for someone else","the way light came through those windows",
+"my ability to sleep through the night","a restaurant that closed in 2021",
+"a relationship with my father","the file I forgot to save","a name I used to go by",
+"the optimism of early March"
+];
+
+// Shape SVG paths
+function shapePathSvg(shapeIdx, color, w=200, h=300){
+const c = color||'#8a8a7a';
+const cd = shadeColor(c,-15);
+switch(shapeIdx){
+case 0: return `<path d="M40 ${h} L40 80 Q40 30 100 30 Q160 30 160 80 L160 ${h}Z" fill="${c}" stroke="${cd}" stroke-width="1.5"/>`;
+case 1: return `<path d="M35 ${h} L35 90 Q35 20 100 20 Q165 20 165 90 L165 ${h}Z" fill="${c}" stroke="${cd}" stroke-width="1.5"/>`;
+case 2: return `<path d="M40 ${h} L40 60 L60 25 Q100 0 140 25 L160 60 L160 ${h}Z" fill="${c}" stroke="${cd}" stroke-width="1.5"/>`;
+case 3: return `<path d="M30 ${h} L30 80 Q30 50 55 40 L55 55 Q55 25 100 15 Q145 25 145 55 L145 40 Q170 50 170 80 L170 ${h}Z" fill="${c}" stroke="${cd}" stroke-width="1.5"/>`;
+case 4: return `<path d="M45 ${h} L45 80 Q45 40 100 40 Q155 40 155 80 L155 ${h}Z" fill="${c}" stroke="${cd}" stroke-width="1.5"/><circle cx="100" cy="28" r="14" fill="${c}" stroke="${cd}" stroke-width="1.5"/><line x1="100" y1="14" x2="100" y2="5" stroke="${cd}" stroke-width="2"/>`;
+case 5: return `<rect x="50" y="70" width="100" height="${h-70}" fill="${c}" stroke="${cd}" stroke-width="1.5"/><rect x="40" y="60" width="120" height="15" fill="${c}" stroke="${cd}" stroke-width="1"/>`;
+default: return `<path d="M40 ${h} L40 80 Q40 30 100 30 Q160 30 160 80 L160 ${h}Z" fill="${c}" stroke="${cd}" stroke-width="1.5"/>`;
+}
+}
+function shadeColor(col,pct){
+let num=parseInt(col.replace('#',''),16),
+r=(num>>16)+pct,g=((num>>8)&0xff)+pct,b=(num&0xff)+pct;
+r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+return '#'+(r<<16|g<<8|b).toString(16).padStart(6,'0');
+}
+
+// ══════ GENERATE TOMBSTONES ══════
+const graves = [];
+for(let i=0;i<30;i++){
+const by = 1970+Math.floor(Math.random()*40);
+const dy = by+5+Math.floor(Math.random()*50);
+graves.push({
+name:names[i],
+birth:by,death:Math.min(dy,2026),
+epitaph:epitaphs[i%epitaphs.length],
+symbol:symbols[Math.floor(Math.random()*symbols.length)],
+shape:Math.floor(Math.random()*6),
+color:colors[Math.floor(Math.random()*colors.length)],
+buried:buried[i],
+rare:i%5===0
+});
+}
+
+function renderCemetery(){
+const field=document.getElementById('cemeteryField');
+// Distribute in rows with staggered positions
+const rows=6;const perRow=5;
+graves.forEach((g,i)=>{
+const row=Math.floor(i/perRow);
+const col=i%perRow;
+const el=document.createElement('div');
+el.className='tombstone';
+const w=g.rare?90:70;
+const scale=1-row*0.08;
+const baseTop=row*22;
+const left=8+col*18+((row%2)?9:0)+(Math.random()*6-3);
+const top=baseTop+(Math.random()*8);
+el.style.cssText=`left:${left}%;top:${top}%;width:${w*scale}px;z-index:${10-row};opacity:${.5+scale*.5}`;
+const svgH=g.rare?140:110;
+const tc=shadeColor(g.color.hex,40);
+el.innerHTML=`<svg viewBox="0 0 200 ${svgH+50}" xmlns="http://www.w3.org/2000/svg">
+${shapePathSvg(g.shape,g.color.hex,200,svgH+50)}
+<text x="100" y="${g.rare?80:70}" text-anchor="middle" fill="${tc}" font-family="'Cormorant Garamond',serif" font-size="14" font-weight="500" letter-spacing="1">${g.name.split(' ')[1]?.toUpperCase()||g.name.toUpperCase()}</text>
+<text x="100" y="${g.rare?98:86}" text-anchor="middle" fill="${tc}" font-family="'Cormorant Garamond',serif" font-size="9" letter-spacing=".5">${g.birth} — ${g.death}</text>
+<text x="100" y="${g.rare?118:104}" text-anchor="middle" fill="${tc}" font-family="'Cormorant Garamond',serif" font-size="8" font-style="italic" opacity=".7">${g.epitaph.length>25?g.epitaph.slice(0,22)+'…':g.epitaph}</text>
+<text x="100" y="${g.rare?55:55}" text-anchor="middle" font-size="12" opacity=".4">${g.symbol.ch}</text>
+</svg>`;
+el.onclick=()=>showOverlay(g);
+field.appendChild(el);
+});
+}
+
+function renderArchive(){
+const grid=document.getElementById('archiveGrid');
+// Show all 30 + generate 30 more faded ones
+const all=[...graves];
+for(let i=0;i<30;i++){
+all.push({
+name:['Anna','Lukas','Emilia','Hugo','Sofia','Karl','Nora','Erik','Mia','Oscar'][i%10]+' '+['Berg','Lund','Voss','Kahn','Reed','Shaw','Park','Cole','Quinn','Frost'][i%10],
+birth:1965+Math.floor(Math.random()*45),death:2020+Math.floor(Math.random()*6),
+epitaph:epitaphs[i%epitaphs.length],symbol:symbols[i%symbols.length]
+});
+}
+all.forEach(g=>{
+const card=document.createElement('div');
+card.className='archive-card';
+card.innerHTML=`<div class="ac-symbol">${g.symbol.ch}</div>
+<div class="ac-name">${g.name}</div>
+<div class="ac-dates">${g.birth} — ${g.death}</div>
+<div class="ac-epitaph">${g.epitaph}</div>`;
+grid.appendChild(card);
+});
+}
+
+// ══════ OVERLAY ══════
+function showOverlay(g){
+document.getElementById('ovSymbol').textContent=g.symbol.ch;
+document.getElementById('ovName').textContent=g.name;
+document.getElementById('ovDates').textContent=g.birth+' — '+g.death;
+document.getElementById('ovEpitaph').textContent='"'+g.epitaph+'"';
+document.getElementById('ovBuried').textContent=g.buried||'—';
+document.getElementById('overlay').classList.add('active');
+}
+function closeOverlay(){document.getElementById('overlay').classList.remove('active')}
+
+// ══════ MODAL ══════
+let sel={epitaph:epitaphs[0],symbol:symbols[0],shape:0,color:colors[0]};
+
+function openModal(){
+document.getElementById('modal').classList.add('active');
+document.getElementById('fDeath').valueAsDate=new Date();
+updatePreview();
+}
+function closeModal(){document.getElementById('modal').classList.remove('active')}
+
+function initModal(){
+// Epitaphs
+const eg=document.getElementById('epitaphGrid');
+epitaphs.forEach((e,i)=>{
+const d=document.createElement('div');
+d.className='epitaph-option'+(i===0?' selected':'');
+d.textContent=e;
+d.onclick=()=>{eg.querySelectorAll('.epitaph-option').forEach(x=>x.classList.remove('selected'));
+d.classList.add('selected');sel.epitaph=e;updatePreview()};
+eg.appendChild(d);
+});
+// Symbols
+const sg=document.getElementById('symbolGrid');
+symbols.forEach((s,i)=>{
+const d=document.createElement('div');
+d.className='symbol-option'+(i===0?' selected':'');
+d.textContent=s.ch;d.title=s.n;
+d.onclick=()=>{sg.querySelectorAll('.symbol-option').forEach(x=>x.classList.remove('selected'));
+d.classList.add('selected');sel.symbol=s;updatePreview()};
+sg.appendChild(d);
+});
+// Shapes
+const shg=document.getElementById('shapeGrid');
+shapeNames.forEach((n,i)=>{
+const d=document.createElement('div');
+d.className='shape-option'+(i===0?' selected':'');
+d.innerHTML=`<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">${shapePathSvg(i,'#8a8a7a')}</svg>`;
+d.title=n;
+d.onclick=()=>{shg.querySelectorAll('.shape-option').forEach(x=>x.classList.remove('selected'));
+d.classList.add('selected');sel.shape=i;updatePreview()};
+shg.appendChild(d);
+});
+// Colors
+const cg=document.getElementById('colorGrid');
+colors.forEach((c,i)=>{
+const d=document.createElement('div');
+d.className='color-swatch'+(i===0?' selected':'');
+d.style.background=c.hex;d.title=c.name;
+d.onclick=()=>{cg.querySelectorAll('.color-swatch').forEach(x=>x.classList.remove('selected'));
+d.classList.add('selected');sel.color=c;updatePreview()};
+cg.appendChild(d);
+});
+}
+
+function updatePreview(){
+const name=document.getElementById('fName').value||'Name';
+const birth=document.getElementById('fBirth').value?.split('-')[0]||'XXXX';
+const death=document.getElementById('fDeath').value?.split('-')[0]||'XXXX';
+const tc=shadeColor(sel.color.hex,50);
+const svg=document.getElementById('previewSvg');
+svg.innerHTML=`${shapePathSvg(sel.shape,sel.color.hex)}
+<text x="100" y="80" text-anchor="middle" fill="${tc}" font-family="'Cormorant Garamond',serif" font-size="16" font-weight="500" letter-spacing="2">${name.toUpperCase()}</text>
+<text x="100" y="102" text-anchor="middle" fill="${tc}" font-family="'Cormorant Garamond',serif" font-size="11" letter-spacing="1">${birth} — ${death}</text>
+<text x="100" y="55" text-anchor="middle" font-size="16" opacity=".5">${sel.symbol.ch}</text>
+<text x="100" y="130" text-anchor="middle" fill="${tc}" font-family="'Cormorant Garamond',serif" font-size="9" font-style="italic" opacity=".8">${sel.epitaph}</text>`;
+}
+
+function placeStone(){
+closeModal();
+// Brief flash of confirmation
+const el=document.createElement('div');
+el.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:3000;background:rgba(10,12,18,.9);opacity:0;transition:opacity 1s';
+el.innerHTML=`<div style="text-align:center;font-family:var(--serif);color:var(--ivory)">
+<p style="font-size:1.5rem;letter-spacing:.15em;margin-bottom:1rem">Stone Placed</p>
+<p style="font-size:.85rem;color:rgba(138,138,122,.4);font-style:italic">It will remain here.</p></div>`;
+document.body.appendChild(el);
+requestAnimationFrame(()=>el.style.opacity='1');
+setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),1000)},2500);
+}
+
+// ══════ FOG GENERATION ══════
+function genFog(container,count){
+const el=document.getElementById(container);
+for(let i=0;i<count;i++){
+const d=document.createElement('div');
+const w=200+Math.random()*500;
+d.style.cssText=`width:${w}px;height:${40+Math.random()*80}px;left:${Math.random()*100}%;top:${Math.random()*70}%`;
+el.appendChild(d);
+}
+}
+
+// ══════ FIREFLIES ══════
+function initFireflies(){
+for(let i=0;i<18;i++){
+const f=document.createElement('div');
+f.className='firefly';
+f.style.left=Math.random()*100+'vw';
+f.style.top=(30+Math.random()*60)+'vh';
+document.body.appendChild(f);
+animateFirefly(f);
+}
+}
+function animateFirefly(f){
+const dur=8000+Math.random()*12000;
+const dx=(Math.random()-.5)*200;
+const dy=(Math.random()-.5)*150;
+const startX=parseFloat(f.style.left);
+const startY=parseFloat(f.style.top);
+f.style.opacity='0';
+const fadeIn=setTimeout(()=>{f.style.opacity=String(.2+Math.random()*.4)},Math.random()*3000);
+const x2=Math.max(5,Math.min(95,parseFloat(f.style.left)+dx/window.innerWidth*100));
+const y2=Math.max(20,Math.min(85,parseFloat(f.style.top)+dy/window.innerHeight*100));
+let start=null;
+function step(ts){
+if(!start)start=ts;
+const p=Math.min(1,(ts-start)/dur);
+const ease=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+f.style.left=startX+dx/window.innerWidth*100*ease+'vw';
+f.style.top=startY+dy/window.innerHeight*100*ease+'vh';
+if(p<1)requestAnimationFrame(step);
+else{
+f.style.opacity='0';
+setTimeout(()=>{
+f.style.left=Math.random()*100+'vw';
+f.style.top=(30+Math.random()*60)+'vh';
+animateFirefly(f);
+},1000+Math.random()*3000);
+}
+}
+requestAnimationFrame(step);
+}
+
+// ══════ PARALLAX ══════
+window.addEventListener('scroll',()=>{
+const s=window.scrollY;
+const hero=document.getElementById('hero');
+if(hero){
+hero.querySelector('.sky').style.transform=`translateY(${s*.3}px)`;
+hero.querySelector('.hero-content').style.transform=`translateY(${s*.15}px)`;
+hero.querySelector('.hero-content').style.opacity=Math.max(0,1-s/600);
+}
+},{passive:true});
+
+// ══════ INIT ══════
+genFog('fog1',8);genFog('fog2',6);genFog('fog3',5);
+genFog('cemFog1',6);genFog('cemFog2',4);
+renderCemetery();
+renderArchive();
+initModal();
+initFireflies();
+updatePreview();
+</script>
+</body>
+</html>
